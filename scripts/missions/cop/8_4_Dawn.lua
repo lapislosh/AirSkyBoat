@@ -72,14 +72,13 @@ end
 
 local ringFunction = function(player)
     local ringsTaken = mission:getVar(player, 'Rings')
-    local currentDay = tonumber(os.date('%j'))
-    local lastObtained = mission:getVar(player, 'Obtained')
+    local timeSinceDayObtained = os.time() - mission:getVar(player, 'Obtained')
 
     if ringsTaken == 0 then
         return mission:progressEvent(84, rings)
-    elseif ringsTaken == 1 then -- No Wait for 1st Throw
+    elseif ringsTaken == 1 and timeSinceDayObtained >= utils.days(1) then -- Cannot drop and re-obtain on the same day
         return mission:progressEvent(204, rings)
-    elseif ringsTaken > 1 and (currentDay - lastObtained) >= 28 then -- 28 Day Wait for New Ring
+    elseif ringsTaken > 1 and timeSinceDayObtained >= utils.days(28) then -- 28 Day Wait for New Ring
         return mission:progressEvent(204, rings)
     end
 end
@@ -91,7 +90,7 @@ local giveRings = function(player, csid, option)
         else
             local ringsTaken = mission:getVar(player, 'Rings')
             mission:setVar(player, 'Rings', ringsTaken + 1)
-            mission:setVar(player, 'Obtained', tonumber(os.date('%j')))
+            mission:setVar(player, 'Obtained', getMidnight() - utils.days(1)) -- midnight of the current day
             player:addItem(rings[option - 4])
             return mission:messageSpecial(zones[player:getZoneID()].text.ITEM_OBTAINED, rings[option - 4])
         end
